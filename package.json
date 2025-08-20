@@ -1,0 +1,15 @@
+{
+  "name": "ton-sandbox",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "devDependencies": {
+    "@swc/core": "^1.13.3",
+    "@ton-community/func-js": "^0.10.0",
+    "@types/node": "^24.3.0",
+    "ton-core": "^0.53.0",
+    "ton-crypto": "^3.2.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2"
+  }
+}

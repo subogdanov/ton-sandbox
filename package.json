@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "main": "index.js",
   "license": "MIT",
+  "scripts": {
+    "compile": "ts-node ./scripts/compile.ts"
+  },
   "devDependencies": {
     "@swc/core": "^1.13.3",
     "@ton-community/func-js": "^0.10.0",

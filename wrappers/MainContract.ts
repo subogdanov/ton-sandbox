@@ -1,4 +1,13 @@
-import { Address, beginCell, Cell, Contract, contractAddress, ContractProvider, Sender, SendMode } from 'ton-core'
+import {
+    Address,
+    beginCell,
+    Cell,
+    Contract,
+    contractAddress,
+    ContractProvider,
+    Sender,
+    SendMode,
+} from 'ton-core'
 
 export class MainContract implements Contract {
     constructor(
@@ -8,7 +17,7 @@ export class MainContract implements Contract {
     }
 
     public static createFromConfig(config: any, code: Cell, workchain = 0) {
-        const data = beginCell().endCell()
+        const data = new Cell()
         const init = { code: code, data: data }
         const address = contractAddress(workchain, init)
 
@@ -19,19 +28,30 @@ export class MainContract implements Contract {
         provider: ContractProvider,
         sender: Sender,
         value: bigint,
+        number?: number
     ) {
+        const bodyBuilder = beginCell()
+
+        if (number) {
+            bodyBuilder.storeUint(number, 32)
+        }
+
         await provider.internal(sender, {
             value,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
-            body: beginCell().endCell()
+            body: bodyBuilder.endCell()
         })
     }
 
-    public async getData(provider: ContractProvider) {
+    public async getTheLatestSender(provider: ContractProvider) {
         const { stack} = await provider.get('get_the_latest_sender', [])
 
-        return {
-            recent_sender: stack.readAddress()
-        }
+        return stack.readAddress()
+    }
+
+    public async getSum(provider: ContractProvider) {
+        const { stack} = await provider.get('get_sum', [])
+
+        return stack.readNumber()
     }
 }

@@ -24,16 +24,22 @@ import qrcode from 'qrcode-terminal'
     console.log(`The address of the contract is: ${address.toString()}`)
     console.log('Please scan the QR code below to deploy the contract:')
 
+    const randomNumber = Math.floor(Math.random() * 9) + 1; // 1 - 9
+
+    console.log({ randomNumber })
+
     let link = 'ton://transfer/' +
         address.toString({
             testOnly: true
         }) + '?' + qs.stringify({
-            text: 'Deploy contract',
-            amount: toNano('0.05').toString(10),
+            amount: toNano('0.01').toString(10),
             init: stateInitCell.toBoc({ idx: false }).toString('base64'),
+            bin: beginCell().storeUint(randomNumber, 32).endCell().toBoc().toString('base64')
         })
 
     qrcode.generate(link, { small: true }, (code) => {
+        console.log('Link:', link)
+
         console.log(code)
     })
 })()

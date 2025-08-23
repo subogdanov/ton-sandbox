@@ -27,27 +27,54 @@ import { TonClient4 } from 'ton'
         return
     }
 
-    let latestSenderAddress: Address
-
-    const response = await client4.runMethod(
+    const getTheLatestSenderResponse = await client4.runMethod(
         latestBlock.last.seqno,
         address,
         'get_the_latest_sender',
     )
 
-    if (response.exitCode !== 0) {
+    if (getTheLatestSenderResponse.exitCode !== 0) {
         console.error('Running getter method failed')
 
         return
     }
 
-    if (response.result[0].type !== 'slice') {
+    if (getTheLatestSenderResponse.result[0].type !== 'slice') {
         console.error('Unknown result type')
 
         return
     }
 
-    latestSenderAddress = response.result[0].cell.beginParse().loadAddress()
+    console.log({
+        latestSenderAddress: getTheLatestSenderResponse
+            .result[0]
+            .cell
+            .beginParse()
+            .loadAddress()
+            .toString({ testOnly: true, bounceable: false })
+    })
 
-    console.log({ latestSenderAddress: latestSenderAddress.toString({ testOnly: true, bounceable: false })})
+    const getSumResponse = await client4.runMethod(
+        latestBlock.last.seqno,
+        address,
+        'get_sum',
+    )
+
+    if (getSumResponse.exitCode !== 0) {
+        console.error('Running getter method failed')
+
+        return
+    }
+
+    if (getSumResponse.result[0].type !== 'int') {
+        console.error('Unknown result type')
+
+        return
+    }
+
+    console.log({
+        sum: getSumResponse
+            .result[0]
+            .value
+    })
 })()

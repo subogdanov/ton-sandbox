@@ -7,7 +7,11 @@
     "compile": "ts-node ./scripts/compile.ts",
     "test": "yarn compile && jest",
     "deploy": "yarn compile && ts-node ./scripts/deploy.ts",
-    "onchaintest": "ts-node ./scripts/onchaintest.ts"
+    "deploy:testnet": "NODE_ENV=test yarn deploy",
+    "deploy:mainnet": "NODE_ENV=production yarn deploy",
+    "onchaintest": "ts-node ./scripts/onchaintest.ts",
+    "onchaintest:testnet": "NODE_ENV=test yarn onchaintest",
+    "onchaintest:mainnet": "NODE_ENV=production yarn onchaintest"
   },
   "devDependencies": {
     "@swc/core": "^1.13.3",
@@ -29,6 +33,7 @@
     "typescript": "^5.9.2"
   },
   "dependencies": {
-    "@orbs-network/ton-access": "^2.3.3"
+    "@orbs-network/ton-access": "^2.3.3",
+    "dotenv": "^17.2.1"
   }
 }

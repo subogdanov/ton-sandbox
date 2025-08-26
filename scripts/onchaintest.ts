@@ -1,9 +1,14 @@
 import { hex } from '../build/main.compiled.json'
-import { Address, Cell, contractAddress } from 'ton-core'
+import { Cell, contractAddress } from 'ton-core'
 import { getHttpV4Endpoint } from '@orbs-network/ton-access'
 import { TonClient4 } from 'ton'
+import { ENV, resolveEnv } from "./helpers";
 
 (async function onChainTestScript() {
+    const env = resolveEnv()
+
+    console.log(`Current environment: ${env}`)
+
     const codeCell = Cell.fromBoc(Buffer.from(hex, 'hex'))[0]
     const dataCell = new Cell()
 
@@ -13,7 +18,7 @@ import { TonClient4 } from 'ton'
     })
 
     const endpoint = await getHttpV4Endpoint({
-        network: 'testnet'
+        network: env === ENV.TEST ? 'testnet' : 'mainnet'
     })
 
     const client4 = new TonClient4({ endpoint })

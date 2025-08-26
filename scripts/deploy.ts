@@ -1,9 +1,14 @@
-import {beginCell, Cell, contractAddress, StateInit, storeStateInit, toNano} from 'ton-core';
+import { beginCell, Cell, contractAddress, StateInit, storeStateInit, toNano } from 'ton-core';
 import { hex } from '../build/main.compiled.json'
 import qs from 'qs'
 import qrcode from 'qrcode-terminal'
+import { ENV, resolveEnv } from "./helpers";
 
 (async function deployScript() {
+    const env = resolveEnv()
+
+    console.log(`Current environment: ${env}`)
+
     const codeCell = Cell.fromBoc(Buffer.from(hex, 'hex'))[0]
     const dataCell = new Cell()
 
@@ -22,15 +27,14 @@ import qrcode from 'qrcode-terminal'
     })
 
     console.log(`The address of the contract is: ${address.toString()}`)
-    console.log('Please scan the QR code below to deploy the contract:')
 
     const randomNumber = Math.floor(Math.random() * 9) + 1; // 1 - 9
 
-    console.log({ randomNumber })
+    console.log(`Random number: ${randomNumber}`)
 
     let link = 'ton://transfer/' +
         address.toString({
-            testOnly: true
+            testOnly: env === ENV.TEST,
         }) + '?' + qs.stringify({
             amount: toNano('0.01').toString(10),
             init: stateInitCell.toBoc({ idx: false }).toString('base64'),
@@ -38,8 +42,9 @@ import qrcode from 'qrcode-terminal'
         })
 
     qrcode.generate(link, { small: true }, (code) => {
-        console.log('Link:', link)
+        console.log(`Link: ${link}`)
 
+        console.log('Please scan the QR code below to deploy the contract:')
         console.log(code)
     })
 })()

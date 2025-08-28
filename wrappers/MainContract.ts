@@ -34,6 +34,18 @@ export class MainContract implements Contract {
         return new MainContract(address, init)
     }
 
+    public async sendDeploy(provider: ContractProvider, via: Sender, value: bigint) {
+        const msgBody = beginCell()
+            .storeUint(2, 32) // OP code
+            .endCell();
+
+        await provider.internal(via, {
+            value,
+            sendMode: SendMode.PAY_GAS_SEPARATELY,
+            body: msgBody,
+        });
+    }
+
     public async sendIncrement(
         provider: ContractProvider,
         sender: Sender,

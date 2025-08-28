@@ -1,21 +1,24 @@
 import { Cell, toNano} from 'ton-core'
-import { hex } from '../build/main.compiled.json'
 import { Blockchain, SandboxContract, TreasuryContract } from '@ton-community/sandbox'
 import { MainContract } from '../wrappers/MainContract'
 import '@ton-community/test-utils'
+import { compile } from "@ton-community/blueprint";
 
 describe('main.fc contract tests', () => {
-    let blockchain: Blockchain;
-    let contract: SandboxContract<MainContract>;
-    let initWallet: SandboxContract<TreasuryContract>;
-    let ownerWallet: SandboxContract<TreasuryContract>;
+    let blockchain: Blockchain
+    let contract: SandboxContract<MainContract>
+    let initWallet: SandboxContract<TreasuryContract>
+    let ownerWallet: SandboxContract<TreasuryContract>
+    let codeCell: Cell
+
+    beforeAll(async () => {
+        codeCell = await compile('MainContract');
+    })
 
     beforeEach(async () => {
         blockchain = await Blockchain.create();
         initWallet = await blockchain.treasury('initWallet');
         ownerWallet = await blockchain.treasury('ownerWallet');
-
-        const codeCell = Cell.fromBoc(Buffer.from(hex, 'hex'))[0];
 
         contract = blockchain.openContract(
             MainContract.createFromConfig(

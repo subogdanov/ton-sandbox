@@ -5,7 +5,7 @@
   "license": "MIT",
   "scripts": {
     "compile": "ts-node ./scripts/compile.ts",
-    "test": "yarn compile && jest",
+    "test": "jest",
     "deploy": "yarn compile && ts-node ./scripts/deploy.ts",
     "deploy:testnet": "NODE_ENV=test yarn deploy",
     "deploy:mainnet": "NODE_ENV=production yarn deploy",
@@ -15,6 +15,7 @@
   },
   "devDependencies": {
     "@swc/core": "^1.13.3",
+    "@ton-community/blueprint": "^0.12.0",
     "@ton-community/func-js": "^0.10.0",
     "@ton-community/sandbox": "^0.11.0",
     "@ton-community/test-utils": "^0.3.0",

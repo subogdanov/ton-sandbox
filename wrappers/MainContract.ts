@@ -9,6 +9,11 @@ import {
     SendMode,
 } from 'ton-core'
 
+export type MainContractConfig = {
+    number: number;
+    address: Address;
+};
+
 export class MainContract implements Contract {
     constructor(
         readonly address: Address,
@@ -16,42 +21,41 @@ export class MainContract implements Contract {
     ) {
     }
 
-    public static createFromConfig(config: any, code: Cell, workchain = 0) {
-        const data = new Cell()
+    public static createFromConfig(config: MainContractConfig, code: Cell, workchain = 0) {
+        const data = beginCell()
+            .storeUint(config.number, 32)
+            .storeAddress(config.address)
+            .endCell();
         const init = { code: code, data: data }
         const address = contractAddress(workchain, init)
 
         return new MainContract(address, init)
     }
 
-    public async sendInternalMessage(
+    public async sendIncrement(
         provider: ContractProvider,
         sender: Sender,
         value: bigint,
-        number?: number
+        incrementBy: number
     ) {
-        const bodyBuilder = beginCell()
-
-        if (number) {
-            bodyBuilder.storeUint(number, 32)
-        }
+        const msgBody = beginCell()
+            .storeUint(1, 32) // OP code
+            .storeUint(incrementBy, 32) // increment_by value
+            .endCell();
 
         await provider.internal(sender, {
             value,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
-            body: bodyBuilder.endCell()
-        })
+            body: msgBody,
+        });
     }
 
-    public async getTheLatestSender(provider: ContractProvider) {
-        const { stack} = await provider.get('get_the_latest_sender', [])
+    public async getData(provider: ContractProvider) {
+        const { stack} = await provider.get('get_contract_storage_data', [])
 
-        return stack.readAddress()
-    }
-
-    public async getSum(provider: ContractProvider) {
-        const { stack} = await provider.get('get_sum', [])
-
-        return stack.readNumber()
+        return {
+            number: stack.readNumber(),
+            recentSender: stack.readAddress(),
+        }
     }
 }

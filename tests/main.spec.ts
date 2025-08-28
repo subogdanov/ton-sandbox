@@ -5,20 +5,29 @@ import { MainContract } from '../wrappers/MainContract'
 import '@ton-community/test-utils'
 
 describe('main.fc contract tests', () => {
-    it('check get_the_latest_sender method', async () => {
+    it('should successfully increase counter in contract and get the proper most recent sender address', async () => {
         const blockchain = await Blockchain.create()
 
         const codeCell = Cell.fromBoc(Buffer.from(hex, 'hex'))[0]
 
+        const initAddress = await blockchain.treasury('initAddress');
+
         const contract = blockchain.openContract(
-            MainContract.createFromConfig({}, codeCell)
+            MainContract.createFromConfig(
+                {
+                    number: 0,
+                    address: initAddress.address,
+                },
+                codeCell
+            )
         )
 
         const senderWallet = await blockchain.treasury('sender')
 
-        const result = await contract.sendInternalMessage(
+        const result = await contract.sendIncrement(
             senderWallet.getSender(),
             toNano('0.05'),
+            5
         )
 
         expect(result.transactions).toHaveTransaction({
@@ -27,38 +36,9 @@ describe('main.fc contract tests', () => {
             success: true
         })
 
-        const theLatestSender = await contract.getTheLatestSender()
+        const data = await contract.getData()
 
-        expect(theLatestSender.toString()).toBe(senderWallet.address.toString())
-    })
-
-    it('check get_sum method', async () => {
-        const blockchain = await Blockchain.create()
-
-        const codeCell = Cell.fromBoc(Buffer.from(hex, 'hex'))[0]
-
-        const contract = blockchain.openContract(
-            MainContract.createFromConfig({}, codeCell)
-        )
-
-        const senderWallet = await blockchain.treasury('sender')
-
-        const randomNumber = Math.floor(Math.random() * 9) + 1; // 1 - 9
-
-        const result = await contract.sendInternalMessage(
-            senderWallet.getSender(),
-            toNano('0.05'),
-            randomNumber
-        )
-
-        expect(result.transactions).toHaveTransaction({
-            from: senderWallet.address,
-            to: contract.address,
-            success: true
-        })
-
-        const sum = await contract.getSum()
-
-        expect(sum).toBe(randomNumber)
+        expect(data.recentSender.toString()).toBe(senderWallet.address.toString());
+        expect(data.number).toEqual(5);
     })
 })

@@ -1,4 +1,4 @@
-import { Cell } from 'ton-core'
+import { Cell } from '@ton/core'
 import { compileFunc } from '@ton-community/func-js'
 import * as fs from 'node:fs'
 

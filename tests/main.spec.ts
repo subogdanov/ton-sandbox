@@ -1,24 +1,44 @@
-import {beginCell, Cell, toNano} from 'ton-core'
-import { hex } from '../build/main.compiled.json'
-import { Blockchain } from '@ton-community/sandbox'
+import { Cell, toNano} from 'ton-core'
+import { Blockchain, SandboxContract, TreasuryContract } from '@ton-community/sandbox'
 import { MainContract } from '../wrappers/MainContract'
 import '@ton-community/test-utils'
+import { compile } from "@ton-community/blueprint";
 
 describe('main.fc contract tests', () => {
-    it('check get_the_latest_sender method', async () => {
-        const blockchain = await Blockchain.create()
+    let blockchain: Blockchain
+    let contract: SandboxContract<MainContract>
+    let initWallet: SandboxContract<TreasuryContract>
+    let ownerWallet: SandboxContract<TreasuryContract>
+    let codeCell: Cell
 
-        const codeCell = Cell.fromBoc(Buffer.from(hex, 'hex'))[0]
+    beforeAll(async () => {
+        codeCell = await compile('MainContract');
+    })
 
-        const contract = blockchain.openContract(
-            MainContract.createFromConfig({}, codeCell)
-        )
+    beforeEach(async () => {
+        blockchain = await Blockchain.create();
+        initWallet = await blockchain.treasury('initWallet');
+        ownerWallet = await blockchain.treasury('ownerWallet');
 
+        contract = blockchain.openContract(
+            MainContract.createFromConfig(
+                {
+                    number: 0,
+                    address: initWallet.address,
+                    ownerAddress: ownerWallet.address,
+                },
+                codeCell
+            )
+        );
+    })
+
+    it('should successfully increase counter in contract and get the proper most recent sender address', async () => {
         const senderWallet = await blockchain.treasury('sender')
 
-        const result = await contract.sendInternalMessage(
+        const result = await contract.sendIncrement(
             senderWallet.getSender(),
             toNano('0.05'),
+            5
         )
 
         expect(result.transactions).toHaveTransaction({
@@ -27,38 +47,100 @@ describe('main.fc contract tests', () => {
             success: true
         })
 
-        const theLatestSender = await contract.getTheLatestSender()
+        const data = await contract.getData()
 
-        expect(theLatestSender.toString()).toBe(senderWallet.address.toString())
+        expect(data.recentSender.toString()).toBe(senderWallet.address.toString());
+        expect(data.number).toEqual(5);
     })
 
-    it('check get_sum method', async () => {
-        const blockchain = await Blockchain.create()
+    it('successfully deposits funds', async () => {
+        const senderWallet = await blockchain.treasury("sender");
 
-        const codeCell = Cell.fromBoc(Buffer.from(hex, 'hex'))[0]
-
-        const contract = blockchain.openContract(
-            MainContract.createFromConfig({}, codeCell)
-        )
-
-        const senderWallet = await blockchain.treasury('sender')
-
-        const randomNumber = Math.floor(Math.random() * 9) + 1; // 1 - 9
-
-        const result = await contract.sendInternalMessage(
+        const depositMessageResult = await contract.sendDeposit(
             senderWallet.getSender(),
-            toNano('0.05'),
-            randomNumber
-        )
+            toNano('5')
+        );
 
-        expect(result.transactions).toHaveTransaction({
+        expect(depositMessageResult.transactions).toHaveTransaction({
             from: senderWallet.address,
             to: contract.address,
-            success: true
-        })
+            success: true,
+        });
 
-        const sum = await contract.getSum()
+        const balanceRequest = await contract.getBalance();
 
-        expect(sum).toBe(randomNumber)
+        expect(balanceRequest).toBeGreaterThan(toNano('4.99'));
     })
+
+    it('should return deposit funds as no command is sent', async () => {
+        const senderWallet = await blockchain.treasury('sender');
+
+        const depositMessageResult = await contract.sendNoCodeDeposit(
+            senderWallet.getSender(),
+            toNano('5')
+        );
+
+        expect(depositMessageResult.transactions).toHaveTransaction({
+            from: senderWallet.address,
+            to: contract.address,
+            success: false,
+        });
+
+        const balanceRequest = await contract.getBalance();
+
+        expect(balanceRequest).toBe(0);
+    })
+
+    it('successfully withdraws funds on behalf of owner', async () => {
+        const senderWallet = await blockchain.treasury('sender');
+
+        await contract.sendDeposit(senderWallet.getSender(), toNano('5'));
+
+        const withdrawalRequestResult = await contract.sendWithdrawalRequest(
+            ownerWallet.getSender(),
+            toNano('0.05'),
+            toNano('1')
+        );
+
+        expect(withdrawalRequestResult.transactions).toHaveTransaction({
+            from: contract.address,
+            to: ownerWallet.address,
+            success: true,
+            value: toNano(1),
+        });
+    })
+
+    it('fails to withdraw funds on behalf of non-owner', async () => {
+        const senderWallet = await blockchain.treasury('sender');
+
+        await contract.sendDeposit(senderWallet.getSender(), toNano('5'));
+
+        const withdrawalRequestResult = await contract.sendWithdrawalRequest(
+            senderWallet.getSender(),
+            toNano('0.5'),
+            toNano('1')
+        );
+
+        expect(withdrawalRequestResult.transactions).toHaveTransaction({
+            from: senderWallet.address,
+            to: contract.address,
+            success: false,
+            exitCode: 103,
+        });
+    })
+
+    it('fails to withdraw funds because lack of balance', async () => {
+        const withdrawalRequestResult = await contract.sendWithdrawalRequest(
+            ownerWallet.getSender(),
+            toNano('0.5'),
+            toNano('1')
+        );
+
+        expect(withdrawalRequestResult.transactions).toHaveTransaction({
+            from: ownerWallet.address,
+            to: contract.address,
+            success: false,
+            exitCode: 104,
+        });
+    });
 })

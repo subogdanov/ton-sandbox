@@ -1,8 +1,8 @@
-import { Cell, toNano} from 'ton-core'
-import { Blockchain, SandboxContract, TreasuryContract } from '@ton-community/sandbox'
+import { Cell, toNano} from '@ton/core'
+import { Blockchain, SandboxContract, TreasuryContract } from '@ton/sandbox'
 import { MainContract } from '../wrappers/MainContract'
-import '@ton-community/test-utils'
-import { compile } from "@ton-community/blueprint";
+import '@ton/test-utils'
+import { compile } from "@ton/blueprint";
 
 describe('main.fc contract tests', () => {
     let blockchain: Blockchain

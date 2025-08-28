@@ -1,7 +1,7 @@
-import { address, toNano } from 'ton-core';
+import { address, toNano } from '@ton/core';
 import { resolveEnv } from "./helpers";
 import { MainContract } from "../wrappers/MainContract";
-import { compile, NetworkProvider } from "@ton-community/blueprint";
+import { compile, NetworkProvider } from "@ton/blueprint";
 
 export async function run(provider: NetworkProvider) {
     const env = resolveEnv()
